@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -54,6 +55,7 @@ def query(request: QueryRequest) -> QueryResponse:
       3. LLM gera a resposta contextualizada a partir dos dados (round-trip 2)
     """
     total_start = time.perf_counter()
+    request_bytes = len(request.model_dump_json().encode("utf-8"))
 
     try:
         sql_result = llm.generate_sql(request.question)
@@ -67,6 +69,7 @@ def query(request: QueryRequest) -> QueryResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao executar SQL gerado pelo LLM: {e}") from e
     sql_exec_end = time.perf_counter()
+    db_payload_bytes = len(json.dumps(rows, ensure_ascii=False, default=str).encode("utf-8"))
 
     try:
         answer_result = llm.generate_answer(request.question, rows)
@@ -75,6 +78,16 @@ def query(request: QueryRequest) -> QueryResponse:
 
     total_latency_ms = (time.perf_counter() - total_start) * 1000
     sql_execution_latency_ms = (sql_exec_end - total_start) * 1000 - sql_result.latency_ms
+
+    # Tamanho do payload de resposta SEM o bloco de metrics (evita
+    # circularidade — ver comentário em app/models.py).
+    response_body_without_metrics = {
+        "question": request.question,
+        "sql_generated": sql_result.sql,
+        "data": rows,
+        "answer": answer_result.text,
+    }
+    response_bytes = len(json.dumps(response_body_without_metrics, ensure_ascii=False, default=str).encode("utf-8"))
 
     metrics = QueryMetrics(
         total_latency_ms=round(total_latency_ms, 2),
@@ -85,6 +98,11 @@ def query(request: QueryRequest) -> QueryResponse:
         input_tokens=sql_result.input_tokens + answer_result.input_tokens,
         output_tokens=sql_result.output_tokens + answer_result.output_tokens,
         rows_returned=len(rows),
+        request_bytes=request_bytes,
+        response_bytes=response_bytes,
+        llm_bytes_sent=sql_result.bytes_sent + answer_result.bytes_sent,
+        llm_bytes_received=sql_result.bytes_received + answer_result.bytes_received,
+        db_payload_bytes=db_payload_bytes,
     )
 
     logger.info("query=%r sql=%r metrics=%s", request.question, sql_result.sql, metrics.model_dump())

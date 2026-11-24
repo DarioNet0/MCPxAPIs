@@ -15,8 +15,8 @@ o SDK do MCP), então o comparador roda por fora dos dois, chamando um via
 HTTP e o outro via subprocesso.
 
 Uso:
-    python scripts/side_by_side.py "Qual foi a média de crescimento do PIB da América do Sul em 2023?"
-    python scripts/side_by_side.py --questions perguntas.txt
+    python experiments/side_by_side.py "Qual foi a média de crescimento do PIB da América do Sul em 2023?"
+    python experiments/side_by_side.py --questions experiments/questions/perguntas.txt
 """
 
 import argparse
@@ -31,7 +31,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MCP_SERVER_DIR = REPO_ROOT / "mcp-server"
-RESULTS_LOG = Path(__file__).resolve().parent / "results" / "side_by_side_log.jsonl"
+RESULTS_LOG = REPO_ROOT / "results" / "logs" / "side_by_side_log.jsonl"
 
 
 def call_rest(question: str, rest_url: str) -> dict:
@@ -87,6 +87,10 @@ def print_comparison(question: str, rest_result: dict, mcp_result: dict) -> None
             f"Latência total: {m.get('total_latency_ms')} ms | round-trips LLM: {m.get('llm_round_trips')} "
             f"| tokens in/out: {m.get('input_tokens')}/{m.get('output_tokens')} | linhas: {m.get('rows_returned')}"
         )
+        print(
+            f"Bytes — request: {m.get('request_bytes')} | response: {m.get('response_bytes')} "
+            f"| LLM sent/recv: {m.get('llm_bytes_sent')}/{m.get('llm_bytes_received')} | db payload: {m.get('db_payload_bytes')}"
+        )
     else:
         print(f"ERRO: {rest_result.get('_error')}")
 
@@ -98,6 +102,11 @@ def print_comparison(question: str, rest_result: dict, mcp_result: dict) -> None
             f"Latência total: {m.get('total_latency_ms')} ms | round-trips LLM: {m.get('llm_round_trips')} "
             f"| tool calls: {m.get('tool_call_count')} | tokens in/out: {m.get('input_tokens')}/{m.get('output_tokens')} "
             f"| linhas: {m.get('rows_returned')}"
+        )
+        print(
+            f"Bytes — request: {m.get('request_bytes')} | response: {m.get('response_bytes')} "
+            f"| LLM sent/recv: {m.get('llm_bytes_sent')}/{m.get('llm_bytes_received')} "
+            f"| MCP sent/recv: {m.get('mcp_bytes_sent')}/{m.get('mcp_bytes_received')} | db payload: {m.get('db_payload_bytes')}"
         )
     else:
         print(f"ERRO: {mcp_result.get('_error')}")

@@ -1,0 +1,30 @@
+Qual foi a média de crescimento do PIB da Europa em 2023?
+Qual país teve a maior taxa de desemprego em 2015?
+Qual foi a inflação média da Ásia entre 2020 e 2022?
+Qual país teve a menor dívida pública (% do PIB) em 2024?
+Quais os 5 países com maior RNB (Gross National Income) em 2021?
+Qual foi a taxa de juros real média da África em 2018?
+Qual país teve o maior saldo em conta corrente em 2022?
+Qual foi a receita tributária média dos países da América do Norte em 2019?
+Qual foi o crescimento do PIB do Brasil em 2020?
+Quais os 3 países com menor taxa de desemprego na Oceania em 2023?
+Existe correlação entre crescimento do PIB e taxa de desemprego na Europa entre 2010 e 2025?
+Como a dívida pública se relaciona com a taxa de juros real nos países da América do Sul?
+Os países com maior inflação também tiveram menor crescimento do PIB em 2022?
+Qual a relação entre despesa do governo e receita tributária nos países da Ásia na última década?
+O saldo em conta corrente acompanha o crescimento do RNB nos países da Oceania?
+Como o desemprego evoluiu em relação à dívida pública na América do Norte entre 2015 e 2020?
+Existe relação entre taxa de juros real e crescimento do PIB nos países emergentes (fora do G7)?
+Países com maior receita tributária têm menor dívida pública, em média, na Europa?
+Qual a relação entre inflação e taxa de juros real nos países da América Latina entre 2018 e 2023?
+Como a despesa do governo se comportou em relação ao crescimento do PIB durante a pandemia (2020-2021), globalmente?
+Com base na tendência de crescimento do PIB da Índia nos últimos 10 anos, qual seria a projeção para 2026?
+Considerando a trajetória da dívida pública do Brasil desde 2015, ela deve continuar subindo, estabilizar ou cair nos próximos anos?
+Dado o histórico de inflação e desemprego da Argentina entre 2010 e 2025, qual a tendência esperada para os próximos dois anos?
+Com base na relação histórica entre despesa do governo e receita tributária na Zona do Euro, o déficit fiscal tende a aumentar ou diminuir?
+Analisando a evolução da taxa de juros real e do crescimento do PIB nos EUA, existe algum padrão que sugira o que aconteceria com uma alta adicional de juros?
+Qual seria a estimativa de crescimento do RNB per capita da China para os próximos 3 anos, com base na série histórica?
+Considerando a relação entre saldo em conta corrente e crescimento do PIB dos países exportadores de commodities (ex: Austrália, Canadá, Brasil), o que se pode prever sobre o impacto de uma queda nos preços de commodities?
+Com base no padrão histórico de crescimento do PIB e evolução do desemprego no Japão, a economia japonesa tende a acelerar ou desacelerar nos próximos anos?
+Dada a correlação entre dívida pública e taxa de juros real observada nos países da União Europeia, o que se pode esperar se os juros subirem mais 2 pontos percentuais?
+Considerando a tendência combinada de inflação, desemprego e crescimento do PIB dos BRICS na última década, esses países estão convergindo ou divergindo economicamente?

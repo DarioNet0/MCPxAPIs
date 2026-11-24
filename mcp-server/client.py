@@ -31,6 +31,20 @@ PROJECT_ROOT = str(Path(__file__).parent)
 MAX_AGENT_STEPS = 6  # trava de segurança contra loops infinitos de tool use
 
 
+def _json_bytes(obj) -> int:
+    """Tamanho em bytes de um objeto serializado como JSON — mesmo critério
+    usado no lado REST (app/llm.py), para as duas implementações ficarem
+    comparáveis na métrica de tamanho de mensagem."""
+    return len(json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8"))
+
+
+def _response_bytes(response) -> int:
+    try:
+        return _json_bytes(response.model_dump())
+    except Exception:
+        return len(str(response).encode("utf-8"))
+
+
 @dataclass
 class MCPQueryResult:
     question: str
@@ -80,11 +94,17 @@ async def answer_question(question: str) -> MCPQueryResult:
     )
 
     total_start = time.perf_counter()
+    request_bytes = len(question.encode("utf-8"))
     llm_round_trips = 0
     tool_calls: list[dict] = []
     input_tokens = 0
     output_tokens = 0
     rows_returned = 0
+    llm_bytes_sent = 0
+    llm_bytes_received = 0
+    mcp_bytes_sent = 0
+    mcp_bytes_received = 0
+    db_payload_bytes = 0
 
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
@@ -107,18 +127,24 @@ async def answer_question(question: str) -> MCPQueryResult:
             messages = [{"role": "user", "content": question}]
 
             for _ in range(MAX_AGENT_STEPS):
+                request_payload = {
+                    "system": system_prompt,
+                    "tools": anthropic_tools,
+                    "messages": messages,
+                }
+                llm_bytes_sent += _json_bytes(request_payload)
+
                 llm_start = time.perf_counter()
                 response = client.messages.create(
                     model=settings.anthropic_model,
                     max_tokens=1024,
-                    system=system_prompt,
-                    tools=anthropic_tools,
-                    messages=messages,
+                    **request_payload,
                 )
                 llm_round_trips += 1
                 input_tokens += response.usage.input_tokens
                 output_tokens += response.usage.output_tokens
                 llm_latency_ms = (time.perf_counter() - llm_start) * 1000
+                llm_bytes_received += _response_bytes(response)
 
                 tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
 
@@ -126,6 +152,11 @@ async def answer_question(question: str) -> MCPQueryResult:
                     # Resposta final em texto — encerra o loop do agente.
                     final_text = "".join(b.text for b in response.content if b.type == "text")
                     total_latency_ms = (time.perf_counter() - total_start) * 1000
+                    # Tamanho do payload de resposta SEM o bloco de metrics
+                    # (mesmo critério do REST — evita circularidade).
+                    response_bytes = _json_bytes(
+                        {"question": question, "answer": final_text, "tool_calls": tool_calls}
+                    )
                     return MCPQueryResult(
                         question=question,
                         answer=final_text,
@@ -138,6 +169,13 @@ async def answer_question(question: str) -> MCPQueryResult:
                             "input_tokens": input_tokens,
                             "output_tokens": output_tokens,
                             "rows_returned": rows_returned,
+                            "request_bytes": request_bytes,
+                            "response_bytes": response_bytes,
+                            "llm_bytes_sent": llm_bytes_sent,
+                            "llm_bytes_received": llm_bytes_received,
+                            "mcp_bytes_sent": mcp_bytes_sent,
+                            "mcp_bytes_received": mcp_bytes_received,
+                            "db_payload_bytes": db_payload_bytes,
                         },
                     )
 
@@ -145,6 +183,8 @@ async def answer_question(question: str) -> MCPQueryResult:
                 messages.append({"role": "assistant", "content": response.content})
                 tool_results_content = []
                 for block in tool_use_blocks:
+                    tool_request_bytes = _json_bytes({"name": block.name, "input": block.input})
+
                     call_start = time.perf_counter()
                     result = await session.call_tool(block.name, block.input)
                     call_latency_ms = (time.perf_counter() - call_start) * 1000
@@ -163,6 +203,9 @@ async def answer_question(question: str) -> MCPQueryResult:
                         payload = "".join(c.text for c in result.content if c.type == "text")
                     result_text = json.dumps(payload, ensure_ascii=False, default=str)
 
+                    mcp_bytes_sent += tool_request_bytes
+                    mcp_bytes_received += len(result_text.encode("utf-8"))
+
                     tool_calls.append(
                         {
                             "tool": block.name,
@@ -173,6 +216,7 @@ async def answer_question(question: str) -> MCPQueryResult:
                     )
                     if block.name == "query_economic_indicators" and not result.is_error and isinstance(payload, list):
                         rows_returned += len(payload)
+                        db_payload_bytes += len(result_text.encode("utf-8"))
 
                     tool_results_content.append(
                         {

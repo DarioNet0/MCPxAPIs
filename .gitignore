@@ -12,3 +12,8 @@ venv/
 .pytest_cache/
 *.egg-info/
 .DS_Store
+
+# Thesis documents and drafts (not part of the code)
+*.docx
+*.pptx
+*rascunho*

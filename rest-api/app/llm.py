@@ -34,13 +34,38 @@ _SQL_TOOL = {
 }
 
 
+def _json_bytes(obj) -> int:
+    """Tamanho em bytes de um objeto serializado como JSON — usado como
+    proxy para o tamanho da mensagem trocada com o LLM, já que o SDK da
+    Anthropic não expõe o payload HTTP bruto enviado/recebido."""
+    return len(json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8"))
+
+
+def _response_bytes(response) -> int:
+    try:
+        return _json_bytes(response.model_dump())
+    except Exception:
+        return len(str(response).encode("utf-8"))
+
+
 class LLMResult:
-    def __init__(self, text: str = "", sql: str | None = None, input_tokens: int = 0, output_tokens: int = 0, latency_ms: float = 0.0):
+    def __init__(
+        self,
+        text: str = "",
+        sql: str | None = None,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+        latency_ms: float = 0.0,
+        bytes_sent: int = 0,
+        bytes_received: int = 0,
+    ):
         self.text = text
         self.sql = sql
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
         self.latency_ms = latency_ms
+        self.bytes_sent = bytes_sent
+        self.bytes_received = bytes_received
 
 
 def _client() -> Anthropic:
@@ -69,14 +94,18 @@ def generate_sql(question: str) -> LLMResult:
         "e limite resultados a no máximo 200 linhas com LIMIT quando a pergunta não pedir um valor único."
     )
 
+    request_payload = {
+        "system": system_prompt,
+        "tools": [_SQL_TOOL],
+        "tool_choice": {"type": "tool", "name": "generate_sql"},
+        "messages": [{"role": "user", "content": question}],
+    }
+
     start = time.perf_counter()
     response = client.messages.create(
         model=settings.anthropic_model,
         max_tokens=1024,
-        system=system_prompt,
-        tools=[_SQL_TOOL],
-        tool_choice={"type": "tool", "name": "generate_sql"},
-        messages=[{"role": "user", "content": question}],
+        **request_payload,
     )
     latency_ms = (time.perf_counter() - start) * 1000
 
@@ -94,6 +123,8 @@ def generate_sql(question: str) -> LLMResult:
         input_tokens=response.usage.input_tokens,
         output_tokens=response.usage.output_tokens,
         latency_ms=latency_ms,
+        bytes_sent=_json_bytes(request_payload),
+        bytes_received=_response_bytes(response),
     )
 
 
@@ -109,12 +140,16 @@ def generate_answer(question: str, rows: list[dict]) -> LLMResult:
         "citando os números relevantes. Se os dados estiverem vazios, diga isso explicitamente."
     )
 
+    request_payload = {
+        "system": "Você é um assistente analítico especializado em indicadores macroeconômicos globais.",
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+
     start = time.perf_counter()
     response = client.messages.create(
         model=settings.anthropic_model,
         max_tokens=1024,
-        system="Você é um assistente analítico especializado em indicadores macroeconômicos globais.",
-        messages=[{"role": "user", "content": user_prompt}],
+        **request_payload,
     )
     latency_ms = (time.perf_counter() - start) * 1000
 
@@ -125,4 +160,6 @@ def generate_answer(question: str, rows: list[dict]) -> LLMResult:
         input_tokens=response.usage.input_tokens,
         output_tokens=response.usage.output_tokens,
         latency_ms=latency_ms,
+        bytes_sent=_json_bytes(request_payload),
+        bytes_received=_response_bytes(response),
     )

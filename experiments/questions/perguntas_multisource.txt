@@ -1,0 +1,15 @@
+Qual foi o crescimento do PIB do Japão em 2019?
+Qual foi a taxa de desemprego da Alemanha em 2021?
+Qual país teve a maior dívida pública (% do PIB) em 2022?
+Qual foi a inflação média do Canadá entre 2018 e 2020?
+Qual foi o saldo em conta corrente da Noruega em 2023?
+Qual foi a expectativa de vida ao nascer no Japão em 2019?
+Qual foi a taxa de mortalidade infantil na Alemanha em 2021?
+Qual país teve a maior despesa em saúde (% do PIB) em 2022?
+Qual foi a expectativa de vida média do Canadá entre 2018 e 2020?
+Qual foi a despesa em saúde (% do PIB) da Noruega em 2023?
+Existe relação entre a despesa em saúde (% do PIB) e o crescimento do PIB no Brasil entre 2015 e 2023?
+Os 5 países com maior expectativa de vida em 2022 também estão entre os com menor taxa de desemprego nesse ano?
+Como a dívida pública (% do PIB) se relaciona com a taxa de mortalidade infantil nos países da América do Sul em 2020?
+Países com maior receita tributária (% do PIB) também têm maior despesa em saúde (% do PIB), considerando os dados da Europa em 2021?
+Existe relação entre a inflação e a expectativa de vida nos países da Ásia entre 2018 e 2022?
